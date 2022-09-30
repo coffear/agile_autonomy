@@ -40,6 +40,12 @@ Before you start, make sure that your compiler versions match `gcc/g++` 7.5.0. T
 sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 100
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 100
 ```
+use open3d v0.9.0, otherwise, the compilation might be failed due to function overload problems.
+```
+git clone --recursive https://github.com/intel-isl/Open3D
+cd Open3D
+git checkout v0.9.0
+```
 
 
 ### Step-by-Step Procedure
