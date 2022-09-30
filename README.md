@@ -46,6 +46,7 @@ git clone --recursive https://github.com/intel-isl/Open3D
 cd Open3D
 git checkout v0.9.0
 ```
+then follow the steps of installing open3d.
 
 
 ### Step-by-Step Procedure
