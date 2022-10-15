@@ -1,4 +1,4 @@
-log_dir: '/tmp/train_7m_object_straight/'
+log_dir: '/home/xieheng/aa_train/models_1meter'
 quad_name: 'hummingbird'
 odometry_topic: 'ground_truth/odometry'
 rgb_topic: 'agile_autonomy/unity_rgb'
@@ -20,15 +20,15 @@ data_generation:
   increase_net_usage_every_n_rollouts: 10
 checkpoint:
   resume_training: True
-  resume_file: "models/ckpt-50"
+  resume_file: "models/ckpt-001"
 train:
   max_training_epochs: 5
   batch_size: 8
   data_save_freq: 15
   top_trajectories: 3
   summary_freq: 400
-  train_dir: "data/train"
-  val_dir: "data/val" # you should fill this with some validation data
+  train_dir: "/home/xieheng/aa_train/train_1meter"
+  val_dir: "/home/xieheng/aa_train/val_1meter"
   log_images: False
   freeze_backbone: False
   save_every_n_epochs: 5
@@ -54,4 +54,4 @@ unity:
   random_seed: 0
   # x,y,z, yaw
   # forest
-  unity_start_pos: [[-20.,20.,0.,0]]
+  unity_start_pos: [[-20, 20, 0, 0]]

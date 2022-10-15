@@ -208,12 +208,12 @@ void FlightmareBridge::spawnObjects(
     obj_msg.name = object_names_;
     // compute the requested tree density for Poisson
     double density =
-        1.0 / (avg_object_spacing_ * avg_object_spacing_ * avg_object_spacing_);
-    int num_objects = static_cast<int>(bounding_box_[0] * bounding_box_[1] *
-                                       bounding_box_[2] * density);
+        1.0 / (avg_object_spacing_ * avg_object_spacing_ );
+    int num_objects = static_cast<int>(bounding_box_[0] * bounding_box_[1] * density);
     // draw sample from poisson distribution
     std::poisson_distribution<int> poisson_dist(num_objects);
-    obj_msg.density = static_cast<double>(poisson_dist(generator_));
+    // obj_msg.density = static_cast<double>(poisson_dist(generator_));
+    obj_msg.density = static_cast<double>(5);
     ROS_INFO("Spawning [%d] objects, poisson mode is [%d].",
              static_cast<int>(obj_msg.density), num_objects);
     obj_msg.rand_size = rand_width_;
@@ -260,9 +260,11 @@ void FlightmareBridge::generatePointcloud(
       (max_corner.x() + min_corner.x()) / 2.0,
       (max_corner.y() + min_corner.y()) / 2.0,
       (max_corner.z() + min_corner.z()) / 2.0};
-  ROS_INFO("Origin pointcloud: [%.2f, %.2f, %.2f]",
-           pcd_msg.bounding_box_origin.at(0), pcd_msg.bounding_box_origin.at(1),
-           pcd_msg.bounding_box_origin.at(2));
+  // ROS_INFO("Origin pointcloud: [%.2f, %.2f, %.2f]",
+  //          pcd_msg.bounding_box_origin.at(0), pcd_msg.bounding_box_origin.at(1),
+  //          pcd_msg.bounding_box_origin.at(2));
+  ROS_INFO("Origin pointcloud: [%.2f, %.2f]",
+           max_corner.z(), min_corner.z());
 
   pcd_msg.path = curr_data_dir + "/";
   pcd_msg.file_name = "pointcloud-unity";

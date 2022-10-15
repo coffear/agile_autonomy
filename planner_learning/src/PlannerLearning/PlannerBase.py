@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import collections
 import copy
+from ctypes import sizeof
 import os
+from turtle import home
+from matplotlib.image import imread
 import numpy as np
 import rospy
 import cv2
@@ -17,8 +20,11 @@ from std_msgs.msg import Empty
 from scipy.spatial.transform import Rotation as R
 from agile_autonomy_msgs.msg import MultiTrajectory
 import tensorflow as tf
-
 from .models.plan_learner import PlanLearner
+
+import matplotlib.pyplot as plt
+
+
 
 
 class PlanBase(object):
@@ -71,7 +77,7 @@ class PlanBase(object):
                                               self.callback_image, queue_size=1)
         if self.config.use_depth:
             self.depth_sub = rospy.Subscriber("/" + self.quad_name + "/" + self.depth_topic, Image,
-                                              self.callback_depth, queue_size=1)
+                                              self.callback_depth, queue_size=1) # realsense 接口
         self.land_sub = rospy.Subscriber("/" + self.config.quad_name + "/autopilot/land",
                                          Empty, self.callback_land, queue_size=1)
         self.fly_sub = rospy.Subscriber("/" + self.quad_name + "/agile_autonomy/start_flying", Bool,
@@ -188,11 +194,19 @@ class PlanBase(object):
             print(e)
 
     def preprocess_depth(self, depth):
-        depth = np.minimum(depth, 20000)
+        depth = np.minimum(depth, 6120)
+        depth[(depth==0)] = 6120
         dim = (self.config.img_width, self.config.img_height)
         depth = cv2.resize(depth, dim)
         depth = np.array(depth, dtype=np.float32)
-        depth = depth / (80) # normalization factor to put depth in (0,255)
+        
+        depth = depth / (24) # normalization factor to put depth in (0,255)
+
+        
+        depth_show = depth.astype(np.uint8)
+        cv2.imshow('depth', depth_show)
+        cv2.waitKey(1)
+        
         depth = np.expand_dims(depth, axis=-1)
         depth = np.tile(depth, (1, 1, 3))
         return depth
@@ -203,7 +217,16 @@ class PlanBase(object):
         '''
         try:
             if self.quad_name == 'hummingbird':
+                # print(data)
                 depth = self.bridge.imgmsg_to_cv2(data, '16UC1')
+                # depth = cv2.imread('/home/zerozero/Downloads/object_onRight.tif',-1)  
+                # print(depth_made)
+                # depth_msg = self.bridge.cv2_to_imgmsg(depth_made)                
+                
+                # depth = self.bridge.imgmsg_to_cv2(depth_msg,'16UC1')
+                # print("depth_made = ", depth_made1)
+                # print("depth = ", depth)
+                # depth = cv2.flip(depth, 1) 
                 # print("============================================================")
                 # print("Min Depth {}. Max Depth {}. with Nans {}".format(np.min(depth),
                 #                                                        np.max(depth),
@@ -215,7 +238,7 @@ class PlanBase(object):
                 # print("Received depth image from hawk!")
                 # the depth sensor is mounted in a flipped configuration on the quadrotor, so flip image first
                 depth_flipped = self.bridge.imgmsg_to_cv2(data, '16UC1')
-                depth = cv2.flip(depth_flipped, -1)  # passing a negative axis index flips both axes
+                depth = cv2.flip(depth_flipped, 1)  # passing a negative axis index flips both axes
             else:
                 print("Invalid quad_name!")
                 raise NotImplementedError
@@ -313,8 +336,8 @@ class PlanBase(object):
         imu_states = [self.odometry.pose.pose.position.x,
                       self.odometry.pose.pose.position.y,
                       self.odometry.pose.pose.position.z] + \
-                     self.odom_rot_input
-
+                      self.odom_rot_input
+                      
         vel = np.array([self.odometry.twist.twist.linear.x,
                         self.odometry.twist.twist.linear.y,
                         self.odometry.twist.twist.linear.z])
@@ -347,13 +370,15 @@ class PlanBase(object):
                                          self.odometry.pose.pose.position.z]).reshape((3, 1))
             difference = reference_position_wf - current_position_wf
             difference = difference / np.linalg.norm(difference)
+            difference = np.array( [ 1, 0, 0 ] ).reshape((3,1))
             goal_dir = self.adapt_reference(difference)
         else:
             # Reference is not loaded at init, but we want to keep updating the list anyway
             goal_dir = np.zeros((3, 1))
         goal_dir = np.squeeze(goal_dir).tolist()
-
         state_inputs = imu_states + goal_dir
+        # print("imu_states size:", np.array(imu_states).shape) # (18, )
+        # print("state_inputs size:", np.array(state_inputs).shape) # (21, )
         self.state_queue.append(state_inputs)
         # Prepare images
         if self.config.use_rgb:
@@ -442,6 +467,8 @@ class PlanBase(object):
             self.n_times_net += 1
         else:
             self.n_times_expert += 1
+        # print("TO the multi_traj============")
+        # print(multi_traj.trajectories[0].points[4].pose.position.y)
 
     def _generate_plan(self, _timer):
         if (self.image is None) or \
@@ -458,3 +485,5 @@ class PlanBase(object):
         self._prepare_net_inputs()
         results = self.learner.inference(self.net_inputs)
         self.trajectory_decision(results)
+
+# TODO: self.depth_queue debug

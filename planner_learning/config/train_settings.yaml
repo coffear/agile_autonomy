@@ -1,4 +1,4 @@
-log_dir: '/tmp/train_straight_7ms'
+log_dir: '/home/xieheng/aa_train/models_1meter'
 quad_name: 'none'
 odometry_topic: 'ground_truth/odometry'
 rgb_topic: 'agile_autonomy/unity_rgb'
@@ -15,8 +15,8 @@ img_height: 224
 future_time: 5.0 # in seconds, how much in the future to track the reference
 modes: 3 # Modes of distribution
 checkpoint:
-  resume_training: False
-  resume_file: ""
+  resume_training: true
+  resume_file: "models/ckpt-001"
 train:
   max_training_epochs: 150
   batch_size: 8
@@ -24,8 +24,10 @@ train:
   top_trajectories: 3
   summary_freq: 400
   data_save_freq: 15
-  train_dir: "data/train"
-  val_dir: "data/val"
+  train_dir: "/home/xieheng/aa_train/train_1meter"
+  val_dir: "/home/xieheng/aa_train/val_1meter"
+  # train_dir: "/media/xieheng/aadisk/train_test"
+  # val_dir: "/media/xieheng/aadisk/val_test"
   log_images: False
   save_every_n_epochs: 5
   ref_frame: 'bf'

@@ -7,7 +7,7 @@
 #include "rpg_common/pose.h"
 #include "traj_sampler/kdtree.h"
 #include "traj_sampler/timing.hpp"
-
+#include <iostream>
 namespace traj_sampler {
 
 TrajSampler::TrajSampler(const int traj_len, const double traj_dt,
@@ -76,7 +76,9 @@ bool TrajSampler::setReferenceFromTrajectory(
       reference_inputs_h_[4 * j + 2] = iterator->bodyrates.y();
       reference_inputs_h_[4 * j + 3] = iterator->bodyrates.z();
     }
+    // std::cout << "acc_x = " <<  reference_states_h_[13 * j + 6] << std::endl;
   }
+   
 }
 
 void TrajSampler::setStateEstimate(const Eigen::Vector3d &pos,
@@ -84,19 +86,24 @@ void TrajSampler::setStateEstimate(const Eigen::Vector3d &pos,
                                    const Eigen::Vector3d &acc,
                                    const Eigen::Quaterniond &att) {
   // This function assumes the linear velocity estimate to be in world frame
-  double state_estimate[13] = {
-      static_cast<double>(pos.x()), static_cast<double>(pos.y()),
-      static_cast<double>(pos.z()), static_cast<double>(vel.x()),
-      static_cast<double>(vel.y()), static_cast<double>(vel.z()),
-      static_cast<double>(acc.x()), static_cast<double>(acc.y()),
-      static_cast<double>(acc.z()), static_cast<double>(att.w()),
-      static_cast<double>(att.x()), static_cast<double>(att.y()),
-      static_cast<double>(att.z())};
+  // double state_estimate[13] = {
+  //     static_cast<double>(pos.x()), static_cast<double>(pos.y()),
+  //     static_cast<double>(pos.z()), static_cast<double>(vel.x()),
+  //     static_cast<double>(vel.y()), static_cast<double>(vel.z()),
+  //     static_cast<double>(acc.x()), static_cast<double>(acc.y()),
+  //     static_cast<double>(acc.z()), static_cast<double>(att.w()),
+  //     static_cast<double>(att.x()), static_cast<double>(att.y()),
+  //     static_cast<double>(att.z())};
+    double state_estimate[13] = {
+      static_cast<double>(pos.x()), static_cast<double>(pos.y()), static_cast<double>(pos.z()), 
+      static_cast<double>(vel.x()), 0, 0,
+      0, 0, 0, 
+      1, 0, 0, 0};
   state_estimate_ = (Eigen::Matrix<double, 13, 1>() << pos.x(), pos.y(),
-                     pos.z(), vel.x(), vel.y(), vel.z(), acc.x(), acc.y(),
-                     acc.z(), att.w(), att.x(), att.y(), att.z())
+                     pos.z(), vel.x(), vel.y()*0, vel.z()*0, acc.x()*0, acc.y()*0,
+                     acc.z()*0, att.w()*0+1, att.x()*0, att.y()*0, att.z()*0)
                         .finished();
-  initialize(state_estimate);
+  initialize(state_estimate); // 起始的 state
 }
 
 void TrajSampler::initialize(const double *start_state) {
@@ -119,23 +126,41 @@ void TrajSampler::initialize(const double *start_state) {
   state_array_h_[12] = start_state[12];
 }
 
+
+
+
 void TrajSampler::computeCost(const double *state_array,
+                              Eigen::Matrix<double,13,1> state_estimate_,
                               const double *reference_states,
                               const double *input_array,
                               const double *reference_inputs,
                               double *cost_array,
                               double *accumulated_cost_array) {
   double exponent = 2.0;
+  double y_cost = 0.0;
+  // CHECK_NEAR(0.0/0.0, 1, 1);
   for (int j = 0; j <= traj_len_; j++) {
+    
+    if (j==traj_len_)
+    {
+      y_cost = 0.0;
+    }
+    else {
+      y_cost = abs(std::pow(state_array[13 * (j+1) + 1]-state_array[13 * j + 1],2));
+    }
+  
     cost_array[j] =
-        Q_xy_ *
-            abs(std::pow(state_array[13 * j + 0] - reference_states[13 * j + 0],
+
+        Q_delta_y_ *  y_cost*30 + 
+
+        Q_xy_ * 
+            abs(std::pow(state_array[13 * j + 0] - (state_estimate_[0] + 6*0.1*j),
                          exponent)) +
-        Q_xy_ *
-            abs(std::pow(state_array[13 * j + 1] - reference_states[13 * j + 1],
+        Q_xy_ * 1 *
+            abs(std::pow(state_array[13 * j + 1] - state_estimate_[1],
                          exponent)) +
-        Q_z_ *
-            abs(std::pow(state_array[13 * j + 2] - reference_states[13 * j + 2],
+        Q_z_ * 1 * 
+            abs(std::pow(state_array[13 * j + 2] - state_estimate_[2],
                          exponent)) +
         Q_vel_ *
             abs(std::pow(state_array[13 * j + 3] - reference_states[13 * j + 3],
@@ -158,6 +183,16 @@ void TrajSampler::computeCost(const double *state_array,
         Q_att_ * abs(std::pow(
                      state_array[13 * j + 12] - reference_states[13 * j + 12],
                      exponent));
+        // double cost_x = Q_xy_ * 
+        //     abs(std::pow(state_array[13 * j + 0] - (state_estimate_[0] + 6*0.1*j),
+        //                  exponent));
+        // double cost_y =  Q_xy_ * 100 *
+        //     abs(std::pow(state_array[13 * j + 1] - state_estimate_[1],
+        //                  exponent));
+        // double cost_z = Q_z_ * 1 * 
+        //     abs(std::pow(state_array[13 * j + 2] - state_estimate_[2],
+        //                  exponent));
+        // std::cout << "cost_x, cost_y, cost_z : " << cost_x << "," << cost_y << "," << cost_z << std::endl; 
   }
   double temp_sum = 0.0;
   for (int j = 0; j <= traj_len_; j++) {
@@ -165,6 +200,60 @@ void TrajSampler::computeCost(const double *state_array,
   }
   accumulated_cost_array[0] = temp_sum / static_cast<double>(traj_len_);
 }
+
+
+
+
+// void TrajSampler::computeCost(const double *state_array,
+//                               const double *reference_states,
+//                               const double *input_array,
+//                               const double *reference_inputs,
+//                               double *cost_array,
+//                               double *accumulated_cost_array) {
+//   double exponent = 2.0;
+  
+//   double ref_state[10];
+//   ref_state[0] = state_estimate_[0]
+
+//   for (int j = 0; j <= traj_len_; j++) {
+//     cost_array[j] =
+//         Q_xy_ *
+//             abs(std::pow(state_array[13 * j + 0] - reference_states[13 * j + 0],
+//                          exponent)) +
+//         Q_xy_ *
+//             abs(std::pow(state_array[13 * j + 1] - reference_states[13 * j + 1],
+//                          exponent)) +
+//         Q_z_ *
+//             abs(std::pow(state_array[13 * j + 2] - reference_states[13 * j + 2],
+//                          exponent)) +
+//         0*Q_vel_ *
+//             abs(std::pow(state_array[13 * j + 3] - reference_states[13 * j + 3],
+//                          exponent)) +
+//         0*Q_vel_ *
+//             abs(std::pow(state_array[13 * j + 4] - reference_states[13 * j + 4],
+//                          exponent)) +
+//         0*Q_vel_ *
+//             abs(std::pow(state_array[13 * j + 5] - reference_states[13 * j + 5],
+//                          exponent)) +
+//         0*Q_att_ *
+//             abs(std::pow(state_array[13 * j + 9] - reference_states[13 * j + 9],
+//                          exponent)) +
+//         0*Q_att_ * abs(std::pow(
+//                      state_array[13 * j + 10] - reference_states[13 * j + 10],
+//                      exponent)) +
+//         0*Q_att_ * abs(std::pow(
+//                      state_array[13 * j + 11] - reference_states[13 * j + 11],
+//                      exponent)) +
+//         0*Q_att_ * abs(std::pow(
+//                      state_array[13 * j + 12] - reference_states[13 * j + 12],
+//                      exponent));
+//   }
+//   double temp_sum = 0.0;
+//   for (int j = 0; j <= traj_len_; j++) {
+//     temp_sum += cost_array[j];
+//   }
+//   accumulated_cost_array[0] = temp_sum / static_cast<double>(traj_len_);
+// }
 
 void TrajSampler::sampleAnchorPoint(const Eigen::Vector3d &ref_pos,
                                     const double &rand_theta,
@@ -175,6 +264,8 @@ void TrajSampler::sampleAnchorPoint(const Eigen::Vector3d &ref_pos,
   double radius = ref_pos.norm();
   double ref_theta = std::acos(ref_pos.z() / radius);
   double ref_phi = std::atan2(ref_pos.y(), ref_pos.x());
+  // std::cout << "ref_phi = " << ref_phi << std::endl; // ref_phi = 0;
+  // double ref_phi = 0.0f;
 
   // we sample anchor points in spherical coordinates in the body frame
   std::uniform_real_distribution<double> theta_dist =
@@ -342,6 +433,7 @@ void TrajSampler::computeLabelBSplineSampling(
     const double max_threshold, const int save_n_best, const bool save_wf,
     const bool save_bf, quadrotor_common::Trajectory *const trajectory,
     const quadrotor_common::Trajectory &initial_guess) {
+ 
   quadrotor_common::TrajectoryPoint state_estimate_point;
   state_estimate_point.position =
       Eigen::Vector3d(static_cast<double>(state_estimate_[0]),
@@ -360,6 +452,17 @@ void TrajSampler::computeLabelBSplineSampling(
                          static_cast<double>(state_estimate_[10]),
                          static_cast<double>(state_estimate_[11]),
                          static_cast<double>(state_estimate_[12]));
+  quadrotor_common::TrajectoryPoint goal_point;
+  double expert_distance = 6;
+  goal_point.position =
+      Eigen::Vector3d(static_cast<double>(state_estimate_[0] + expert_distance),
+                      static_cast<double>(state_estimate_[1]),
+                      static_cast<double>(state_estimate_[2]));
+  goal_point.orientation =
+      Eigen::Quaterniond(static_cast<double>(state_estimate_[9]*0+1),
+                         static_cast<double>(state_estimate_[10]*0),
+                         static_cast<double>(state_estimate_[11]*0),
+                         static_cast<double>(state_estimate_[12]*0));
 
   std::vector<TrajectoryExt> rollouts;
   TrajectoryExt temp_rollout;
@@ -408,28 +511,34 @@ void TrajSampler::computeLabelBSplineSampling(
       if (x_vec_prev.empty()) {
         rpg::Pose T_W_S = rpg::Pose(state_estimate_point.position,
                                     state_estimate_point.orientation);
-        rpg::Pose T_W_C =
-            rpg::Pose(reference_trajectory
-                          .getStateAtTime(ros::Duration(anchor_idx * anchor_dt))
-                          .position,
-                      Eigen::Quaterniond::Identity());
+        //P is the point with positon (odom_x + expert_distance,odom_y,odom_z)
+        rpg::Pose T_W_P = rpg::Pose(goal_point.position,
+                                    Eigen::Quaterniond::Identity());
+        rpg::Pose T_S_P = T_W_S.inverse() * T_W_P;
+        // rpg::Pose T_W_C =
+        //     rpg::Pose(reference_trajectory
+        //                   .getStateAtTime(ros::Duration(anchor_idx * anchor_dt))
+        //                   .position,
+        //               Eigen::Quaterniond::Identity());
 
-        rpg::Pose T_W_C_ig = rpg::Pose(
-            initial_guess.getStateAtTime(ros::Duration(anchor_idx * anchor_dt))
-                .position,
-            Eigen::Quaterniond::Identity());
-        rpg::Pose T_S_C = T_W_S.inverse() * T_W_C;
-        rpg::Pose T_S_C_ig = T_W_S.inverse() * T_W_C_ig;
+        // rpg::Pose T_W_C_ig = rpg::Pose(
+        //     initial_guess.getStateAtTime(ros::Duration(anchor_idx * anchor_dt))
+        //         .position,
+        //     Eigen::Quaterniond::Identity());
+        // rpg::Pose T_S_C = T_W_S.inverse() * T_W_C;
+        // rpg::Pose T_S_C_ig = T_W_S.inverse() * T_W_C_ig;
 
-        sampleAnchorPoint(
-            T_S_C_ig.getPosition().normalized() * T_S_C.getPosition().norm(),
-            rand_theta, rand_phi, &anchor_px, &anchor_py, &anchor_pz);
+        sampleAnchorPoint(T_S_P.getPosition().normalized()*T_S_P.getPosition().norm()*anchor_idx*anchor_dt, rand_theta, rand_phi, &anchor_px, &anchor_py, &anchor_pz);
         // add sampled anchor point
+        // sampleAnchorPoint(
+        //     T_S_C_ig.getPosition().normalized() * T_S_C.getPosition().norm(),
+        //     rand_theta, rand_phi, &anchor_px, &anchor_py, &anchor_pz);
         t_vec.push_back(anchor_idx * anchor_dt);
         x_vec.push_back(anchor_px);
         y_vec.push_back(anchor_py);
         z_vec.push_back(anchor_pz);
       } else {
+        printf("enter else !!!!!!!!!!!!!!!!!");
         sampleAnchorPoint(
             Eigen::Vector3d(x_vec_prev[anchor_idx], y_vec_prev[anchor_idx],
                             z_vec_prev[anchor_idx]),
@@ -440,6 +549,25 @@ void TrajSampler::computeLabelBSplineSampling(
         z_vec.push_back(anchor_pz);
       }
     }
+
+    Eigen::Vector3d point_position;
+
+    // cand_rollout.clear();
+    // for (int i = 0; i <= traj_len_; i++){
+    //   TrajectoryExtPoint point;
+    //   rpg::Pose T_W_S = rpg::Pose(state_estimate_point.position,
+    //                                 state_estimate_point.orientation);
+    //   point.time_from_start = traj_dt_ * i;
+    //   // point_position = Eigen::Vector3d(anchor_px,anchor_py,anchor_pz);
+    //   point_position = Eigen::Vector3d(3,0,0);
+    //   rpg::Pose T_W_a = rpg::Pose(point_position,Eigen::Quaterniond::Identity());
+    //   // rpg::Pose T_S_a = T_W_S.inverse() * T_W_a;
+    //   point.position = T_W_a.getPosition()*i/traj_len_;
+    //   point.velocity = Eigen::Vector3d(0.0,0.0,0.0);
+    //   point.acceleration = Eigen::Vector3d(0.0,0.0,0.0);
+    //   point.attitude = Eigen::Quaterniond::Identity();
+    //   cand_rollout.addPoint(point);
+    // }
 
     createBSpline(t_vec, x_vec, y_vec, z_vec, &cand_rollout);
 
@@ -461,7 +589,7 @@ void TrajSampler::computeLabelBSplineSampling(
       rand_phi += rand_phi_;
     }
 
-    cand_rollout.enableYawing(true);
+    cand_rollout.enableYawing(false);
     cand_rollout.convertToFrame(FrameID::World, state_estimate_point.position,
                                 state_estimate_point.orientation);
 
@@ -469,13 +597,14 @@ void TrajSampler::computeLabelBSplineSampling(
     getRolloutData(cand_rollout);
 
     // compute cost for each trajectory
-    computeCost(state_array_h_, reference_states_h_, input_array_h_,
+    computeCost(state_array_h_, state_estimate_, reference_states_h_, input_array_h_,
                 reference_inputs_h_, cost_array_h_, accumulated_cost_array_h_);
+    // std::cout << "accu_cost before kdtree: " << accumulated_cost_array_h_[0] << std::endl;
     int query_every_nth_point = 1;
     bool in_collision =
         kd_tree->query_kdtree(state_array_h_, accumulated_cost_array_h_,
                               traj_len_, query_every_nth_point, false);
-
+    // std::cout << "after first kdtree cost: " << accumulated_cost_array_h_[0] << std::endl;
     if (in_collision) {
       // bad sample, start with new one
       continue;
@@ -486,7 +615,8 @@ void TrajSampler::computeLabelBSplineSampling(
     TrajectoryExtPoint state_est_plus;
     state_est_plus.time_from_start = 0.0;
     state_est_plus.position = state_estimate_point.position;
-    state_est_plus.attitude = state_estimate_point.orientation;
+    // state_est_plus.attitude = state_estimate_point.orientation;
+    state_est_plus.attitude = Eigen::Quaterniond::Identity();
     state_est_plus.velocity = state_estimate_point.velocity;
     state_est_plus.acceleration = state_estimate_point_acc;
     cand_rollout.replaceFirstPoint(state_est_plus);
@@ -496,14 +626,20 @@ void TrajSampler::computeLabelBSplineSampling(
     cand_rollout.replaceFirstPoint(state_est_plus);
     getRolloutData(cand_rollout);
 
-    computeCost(state_array_h_, reference_states_h_, input_array_h_,
+    computeCost(state_array_h_,state_estimate_, reference_states_h_, input_array_h_,
                 reference_inputs_h_, cost_array_h_, accumulated_cost_array_h_);
     kd_tree->query_kdtree(state_array_h_, accumulated_cost_array_h_, traj_len_,
                           query_every_nth_point, true);
     cand_rollout.setCost(static_cast<double>(accumulated_cost_array_h_[0]));
+    // std::cout << "accumulated_cost: " << accumulated_cost_array_h_[0] << std::endl;
 
     // accept/reject sample
     double curr_cost = cand_rollout.getCost();
+    if ( isnan(curr_cost) )
+    {
+      curr_cost = 0.0;
+    }
+    
     double alpha = std::min(1.0, (std::exp(-0.01 * curr_cost) + 1.0e-7) /
                                      (std::exp(-0.01 * prev_cost) + 1.0e-7));
 
@@ -520,6 +656,7 @@ void TrajSampler::computeLabelBSplineSampling(
     rollouts.push_back(cand_rollout);
   }
   timing_metropolis.toc();
+  
   if (verbose_) {
     std::printf("rollouts.size() = %d\n", static_cast<int>(rollouts.size()));
   }

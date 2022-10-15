@@ -99,7 +99,7 @@ def setup_sim(msg_handler, config):
      "orientation: {x: %f, y: %f, z: %f, w: %f}}, " % (start_quaternion[1],start_quaternion[2],start_quaternion[3],start_quaternion[0]) + \
      "twist:{ linear: {x: 0.0 , y: 0 ,z: 0 } , angular: { x: 0.0 , y: 0 , z: 0.0 }}, " + \
      "reference_frame: world } }'"
-
+    print("posotion[2] is:, %f", position[2])
     os.system(start_string)
     return position
 

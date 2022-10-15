@@ -51,7 +51,7 @@
     <param name="/$(arg quad_name)/agile_autonomy/general/velocity_estimate_in_world_frame" value="false"/>
     <param name="/$(arg quad_name)/agile_autonomy/general/process_every_nth_odometry" value="20"/>
     <!-- hacky parameters to change takeoff -->
-    <param name="/hummingbird/autopilot/optitrack_start_height" value="2.0"/>
+    <param name="/hummingbird/autopilot/optitrack_start_height" value="3.0"/>
     <param name="/hummingbird/autopilot/optitrack_start_land_timeout" value="20.0"/>
 
     <group ns="$(arg quad_name)">

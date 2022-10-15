@@ -80,7 +80,7 @@ visualize_ideal_reference = False
 visualize_trajectories = True
 visualize_start_goal = True
 crop_xy = False
-step = 1
+step = 10
 
 ########################################################
 # possible data_dir are either the root data directory or a specific rollout folder

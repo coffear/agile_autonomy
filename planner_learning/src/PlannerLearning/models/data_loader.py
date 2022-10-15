@@ -88,6 +88,7 @@ class PlanDataset(Dataset):
                                                         num_states=self.config.out_seq_len))
         # Get Odometry data
         data_name = os.path.join(dir_subpath, "odometry.csv")
+        print(data_name)
         assert os.path.isfile(data_name), "Not Found data file"
         df = pd.read_csv(data_name, delimiter=',')
         df = self.quat2rot_pd(df)
@@ -286,15 +287,28 @@ class PlanDataset(Dataset):
         img = np.array(img, dtype=np.float32)
         return img
 
+    # def decode_depth_cv2(self, sample_num):
+    #     sample_num_np = sample_num.numpy()
+    #     fname = self.depth_filenames[sample_num_np]
+    #     depth = cv2.imread(fname, cv2.IMREAD_ANYDEPTH)
+    #     depth = np.minimum(depth, 20000)
+    #     dim = (self.config.img_width, self.config.img_height)
+    #     depth = cv2.resize(depth, dim)
+    #     depth = np.array(depth, dtype=np.float32)
+    #     depth = depth / (80)  # depth in (0.255)
+    #     depth = np.expand_dims(depth, axis=-1)
+    #     depth = np.tile(depth, (1, 1, 3))
+    #     return depth
+
     def decode_depth_cv2(self, sample_num):
         sample_num_np = sample_num.numpy()
         fname = self.depth_filenames[sample_num_np]
         depth = cv2.imread(fname, cv2.IMREAD_ANYDEPTH)
-        depth = np.minimum(depth, 20000)
+        depth = np.minimum(depth, 6120)
         dim = (self.config.img_width, self.config.img_height)
         depth = cv2.resize(depth, dim)
         depth = np.array(depth, dtype=np.float32)
-        depth = depth / (80)  # depth in (0.255)
+        depth = depth / (24)  # depth in (0.255)
         depth = np.expand_dims(depth, axis=-1)
         depth = np.tile(depth, (1, 1, 3))
         return depth

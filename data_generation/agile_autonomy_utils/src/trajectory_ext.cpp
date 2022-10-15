@@ -97,6 +97,13 @@ void TrajectoryExt::convertToBodyFrame() {
   rpg::Pose T_W_S;
   switch (frame_id_) {
     case FrameID::World: {
+      if (std::isnan(reference_odometry_.position.x())) { printf("\033[1;31;40m isnan at line: %d \033[0m\n", __LINE__); }
+      if (std::isnan(reference_odometry_.position.y())) { printf("\033[1;31;40m isnan at line: %d \033[0m\n", __LINE__); }
+      if (std::isnan(reference_odometry_.position.z())) { printf("\033[1;31;40m isnan at line: %d \033[0m\n", __LINE__); }
+      if (std::isnan(reference_odometry_.attitude.w())) { printf("\033[1;31;40m isnan at line: %d \033[0m\n", __LINE__); }
+      if (std::isnan(reference_odometry_.attitude.x())) { printf("\033[1;31;40m isnan at line: %d \033[0m\n", __LINE__); }
+      if (std::isnan(reference_odometry_.attitude.y())) { printf("\033[1;31;40m isnan at line: %d \033[0m\n", __LINE__); }
+      if (std::isnan(reference_odometry_.attitude.z())) { printf("\033[1;31;40m isnan at line: %d \033[0m\n", __LINE__); }
       T_W_S =
           rpg::Pose(reference_odometry_.position, reference_odometry_.attitude);
       break;
@@ -110,7 +117,15 @@ void TrajectoryExt::convertToBodyFrame() {
     //    printf("time from start: %.2f, norm attitude: %.6f\n",
     //           point.time_from_start, point.attitude.coeffs().norm());
     //    std::cout << "position: " << point.position << std::endl;
-    //    std::cout << "attitude: " << point.attitude.coeffs() << std::endl;
+    //  std::cout << "attitude: " << point.attitude.coeffs() << std::endl;
+
+    if (std::isnan(point.position.x())) { printf("\033[1;31;40m point.position.x isnan at line: %d  \033[0m\n", __LINE__); continue; }
+    if (std::isnan(point.position.y())) { printf("\033[1;31;40m isnan at line: %d  \033[0m\n", __LINE__); continue; }
+    if (std::isnan(point.position.z())) { printf("\033[1;31;40m isnan at line: %d  \033[0m\n", __LINE__); continue; }
+    if (std::isnan(point.attitude.w())) { printf("\033[1;31;40m isnan at line: %d  \033[0m\n", __LINE__); continue; }
+    if (std::isnan(point.attitude.x())) { printf("\033[1;31;40m isnan at line: %d  \033[0m\n", __LINE__); continue; }
+    if (std::isnan(point.attitude.y())) { printf("\033[1;31;40m isnan at line: %d  \033[0m\n", __LINE__); continue; }
+    if (std::isnan(point.attitude.z())) { printf("\033[1;31;40m isnan at line: %d  \033[0m\n", __LINE__); continue; }
     rpg::Pose T_W_C = rpg::Pose(point.position, point.attitude);
     rpg::Pose T_S_C = T_W_S.inverse() * T_W_C;
     Eigen::Vector3d linvel_bf =

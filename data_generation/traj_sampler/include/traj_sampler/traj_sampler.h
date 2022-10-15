@@ -48,7 +48,7 @@ class TrajSampler {
   void createReferenceTrajectory(
       quadrotor_common::Trajectory *reference_trajectory);
 
-  void computeCost(const double *state_array, const double *reference_states,
+  void computeCost(const double *state_array, Eigen::Matrix<double,13,1> state_estimate_, const double *reference_states,
                    const double *input_array, const double *reference_inputs,
                    double *cost_array, double *accumulated_cost_array);
 
@@ -73,9 +73,10 @@ class TrajSampler {
   logging::Logging logging_helper_;
 
   double Q_xy_ = 100.0;
-  double Q_z_ = 300.0;
+  double Q_z_ = 600.0;
   double Q_att_ = 0.0;
   double Q_vel_ = 0.0;
+  double Q_delta_y_ = 1000;
 
   Eigen::Matrix<double, 13, 1> state_estimate_;
 

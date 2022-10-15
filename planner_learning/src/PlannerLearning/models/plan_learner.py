@@ -131,7 +131,7 @@ class PlanLearner(object):
             self.train_log_dir = os.path.join(self.config.log_dir, 'train')
             self.summary_writer = tf.summary.create_file_writer(self.train_log_dir)
             self.ckpt_manager = tf.train.CheckpointManager(self.ckpt,
-                                                           self.train_log_dir, max_to_keep=20)
+                                                           self.train_log_dir, max_to_keep=150)
         else:
             # We are in dagger mode, so let us reset the best loss
             self.min_val_loss = np.inf
