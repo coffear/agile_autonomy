@@ -17,7 +17,7 @@ img_width: 224
 img_height: 224
 checkpoint:
   resume_training: True
-  resume_file: "/home/xieheng/aa_train/models_1meter/20221014-164003/train/ckpt-177"
+  resume_file: "/home/xieheng/aa_train/models_mixed/20221020-094429/train/ckpt-41" # "/home/xieheng/aa_train/models_mixed/20221018-095359/train/ckpt-32" # ckpt-32 is good in mixed flight
 test_time:
   max_rollouts: 50
   test_folder: "/tmp/test"

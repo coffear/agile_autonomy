@@ -8,8 +8,8 @@ unity:
   avg_object_spacing: 3.0
   rand_width: 5.0 # width of the uniform distribution that perturbs the regular spawning grid
   object_names: ["Cylinder"] # "Cylinder", "Cube",  "Sphere", "narrow_gap"
-  bounding_box: [8.0, 5.0, 5.0] # spawn objects within this bounding box
-  bounding_box_origin: [5.0, 0.0, 0.0] # relative to the quadrotor start position
+  bounding_box: [10.0, 5.0, 5.0] # spawn objects within this bounding box
+  bounding_box_origin: [6.0, 0.0, 0.0] # relative to the quadrotor start position
   min_object_scale: [0.1, 0.1, 10]   # scale of objects in meters, will sample uniformly between bounds
   max_object_scale: [0.8, 0.8, 10]   # scale of objects in meters, will sample uniformly between bounds
   min_object_angles: [0.0, 0.0, 0.0]  # euler angles in degrees, will sample uniformly between bounds

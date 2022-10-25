@@ -213,7 +213,7 @@ void FlightmareBridge::spawnObjects(
     // draw sample from poisson distribution
     std::poisson_distribution<int> poisson_dist(num_objects);
     // obj_msg.density = static_cast<double>(poisson_dist(generator_));
-    obj_msg.density = static_cast<double>(5);
+    obj_msg.density = static_cast<double>(3);
     ROS_INFO("Spawning [%d] objects, poisson mode is [%d].",
              static_cast<int>(obj_msg.density), num_objects);
     obj_msg.rand_size = rand_width_;

@@ -7,6 +7,7 @@ import open3d as o3d
 import pandas as pd
 
 import argparse
+import time
 
 from scipy.spatial.transform import Rotation as R
 
@@ -439,7 +440,16 @@ param = o3d.io.read_pinhole_camera_parameters(viewpoint_params2)
 for viz_item in range(len(viz_list)):
     vis.add_geometry(viz_list[viz_item])
 ctr.convert_from_pinhole_camera_parameters(param)
+file_name = rollout_dir
+time.sleep(1)
 vis.run()  # user changes the view and press "q" to terminate
-param = vis.get_view_control().convert_to_pinhole_camera_parameters()
-o3d.io.write_pinhole_camera_parameters(viewpoint_params, param)
+vis.capture_screen_image(file_name + '.png')
+# param = vis.get_view_control().convert_to_pinhole_camera_parameters()
+# o3d.io.write_pinhole_camera_parameters(viewpoint_params, param)
 vis.destroy_window()
+
+
+
+
+
+

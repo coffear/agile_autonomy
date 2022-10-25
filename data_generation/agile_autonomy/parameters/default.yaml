@@ -3,12 +3,12 @@ general:
   nw_predictions_frame_id: 1  # 0: world, 1: body
   num_traj_viz: 2  # how many trajectories to visualize
   perform_global_planning: false
-  test_time_velocity: 1
+  test_time_velocity: 4
   test_time_max_z: 3.0
   test_time_min_z: 3.0
 maneuver:
   length_straight: 15.0
-  maneuver_velocity: 1
+  maneuver_velocity: 4
 trajectory:
   traj_len: 10
   traj_dt: 0.1
