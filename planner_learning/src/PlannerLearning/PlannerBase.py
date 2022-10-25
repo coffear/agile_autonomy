@@ -338,9 +338,9 @@ class PlanBase(object):
                       self.odometry.pose.pose.position.z] + \
                       self.odom_rot_input
                       
-        vel = np.array([self.odometry.twist.twist.linear.x,
-                        self.odometry.twist.twist.linear.y,
-                        self.odometry.twist.twist.linear.z])
+        vel = np.array([self.odometry.twist.twist.linear.x*0,
+                        self.odometry.twist.twist.linear.y*0,
+                        self.odometry.twist.twist.linear.z*0])
 
         #vel = vel / np.linalg.norm(vel) * 7.
         vel = vel.squeeze()
